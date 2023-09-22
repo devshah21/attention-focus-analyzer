@@ -1,32 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('loginForm');
-    const message = document.getElementById('message');
+    const startButton = document.getElementById('startButton');
+    const video = document.getElementById('video');
 
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const username = loginForm.username.value;
-        const password = loginForm.password.value;
-
+    startButton.addEventListener('click', async () => {
         try {
-            const response = await fetch('/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, password }),
-            });
-
-            const data = await response.json();
-
-            if (response.status === 200) {
-                message.textContent = data.message;
-                // Redirect or perform other actions upon successful login.
-            } else {
-                message.textContent = data.message;
-            }
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
         } catch (error) {
-            console.error('Login error:', error);
+            console.error('Error accessing camera:', error);
         }
     });
 });
