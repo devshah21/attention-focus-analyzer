@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera Access Web App</title>
+    <title>Camera Access and Object Detection Web App</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -42,9 +42,14 @@
     </style>
 </head>
 <body>
-    <h1>Camera Access Web App</h1>
+    <h1>Camera Access and Object Detection Web App</h1>
     <button id="startButton">Start Camera</button>
     <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <!-- Include TensorFlow.js and COCO-SSD library scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
     <script src="app.js"></script>
 </body>
 </html>
