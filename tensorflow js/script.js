@@ -2,6 +2,7 @@ const video = document.getElementById('webcam');
 const liveView = document.getElementById('liveView');
 const demosSection = document.getElementById('demos');
 const enableWebcamButton = document.getElementById('webcamButton');
+const detectedObjects = [];
 
 // Check if webcam access is supported.
 function getUserMediaSupported() {
@@ -44,10 +45,6 @@ function enableCam(event) {
     });
   }
 
-// Placeholder function for next step.
-function predictWebcam() {
-}
-
 // Pretend model has loaded so we can try out the webcam code.
 var model = undefined;
 
@@ -78,6 +75,8 @@ function predictWebcam() {
     for (let n = 0; n < predictions.length; n++) {
       // If we are over 66% sure we are sure we classified it right, draw it!
       if (predictions[n].score > 0.66) {
+        detectedObjects.push(predictions[n]);
+        displayDetection(predictions[n]);
         const p = document.createElement('p');
         p.innerText = predictions[n].class  + ' - with ' 
             + Math.round(parseFloat(predictions[n].score) * 100) 
@@ -98,9 +97,23 @@ function predictWebcam() {
         children.push(highlighter);
         children.push(p);
       }
+      // clearPreviousDetections();
     }
     
     // Call this function again to keep predicting when the browser is ready.
     window.requestAnimationFrame(predictWebcam);
   });
+}
+
+function clearPreviousDetections() {
+  // Remove previously displayed objects
+  liveView = [];
+}
+
+function displayDetection(prediction) {
+  console.log(detectedObjects);
+  const p = document.createElement('p');
+  p.innerText = prediction.class + ' - with ' + Math.round(parseFloat(prediction.score) * 100) + '% confidence.';
+  liveView.appendChild(p);
+
 }
