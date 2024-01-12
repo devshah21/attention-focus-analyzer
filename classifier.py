@@ -19,9 +19,14 @@ def classify_image(image_path, model):
     # Get the class with the highest probability
     predicted_class = np.argmax(prediction)
     
-    return predicted_class
+    if predicted_class == 0:
+        prediction = 'closed eyes'
+    else:
+        prediction = 'open eyes'
+    
+    return prediction
 
 model = tf.keras.models.load_model('eye_Model.h5')
 
-print(classify_image('_0.jpg', model))
+print(classify_image('_1.jpg', model))
 
