@@ -1,5 +1,8 @@
 from flask import Flask, render_template, Response
 import cv2
+import tensorflow as tf
+
+model = tf.keras.models.load_model('eye_Model.h5')
 
 app = Flask(__name__)
 
