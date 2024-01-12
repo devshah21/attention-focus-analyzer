@@ -3,9 +3,24 @@ import cv2
 import tensorflow as tf
 from classifier import *
 import time
+from collections import deque
+import numpy as np
+
+N = 60  # Number of seconds to consider
+array = deque(maxlen=N)
 
 model = tf.keras.models.load_model('eye_Model.h5')
-array = []
+
+
+def is_focused():
+    # Calculate the proportion of 'closed eyes' predictions in the last N seconds
+    closed_eyes_proportion = np.mean([pred == 'closed eyes' for pred in array])
+
+    # Define a threshold for when the user is considered not focused
+    # For example, if the eyes are closed more than 50% of the time
+    threshold = 0.5
+
+    return closed_eyes_proportion < threshold
 
 
 def classify_frame(frame, model):
@@ -47,6 +62,10 @@ def gen():
             frame = cv2.flip(frame, 1)
             prediction = classify_frame(frame, model)
             array.append(prediction)
+            
+            if not is_focused():
+                print("User is not focused!")
+            
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
