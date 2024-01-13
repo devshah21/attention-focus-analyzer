@@ -5,6 +5,8 @@ from classifier import *
 import time
 from collections import deque
 import numpy as np
+import os
+
 
 N = 60  # Number of seconds to consider
 array = deque(maxlen=N)
@@ -54,6 +56,7 @@ def index():
 
 def gen():
     """Video streaming generator function."""
+    frame_count = 0
     while True:
         success, frame = camera.read()  # read the camera frame
         if not success:
@@ -62,9 +65,13 @@ def gen():
             frame = cv2.flip(frame, 1)
             prediction = classify_frame(frame, model)
             array.append(prediction)
+            print(array)
             
             if not is_focused():
                 print("User is not focused!")
+                
+            cv2.imwrite(f'test_images/frame_{frame_count}.jpg', frame)
+            frame_count += 1
             
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
@@ -80,4 +87,3 @@ def video_feed():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
-
