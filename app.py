@@ -24,16 +24,22 @@ def eye_classifer(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, 1.3, 4)
     
-    for (x,y,w,h) in faces:
+    for (x, y, w, h) in faces:
         roi_gray = gray[y:y+h, x:x+w]
-        roi_color = img[y:y+h, x:x+w]
         
-        # detects eyes of within the detected face area (roi)
+        # detects eyes within the detected face area (roi)
         eyes = eye_cascade.detectMultiScale(roi_gray)
         
-        # draw a rectangle around eyes
-        for (ex,ey,ew,eh) in eyes:
-            cv2.rectangle(roi_color,(ex,ey),(ex+ew,ey+eh),(0,255,255),2)
+        # check if any eyes are detected
+        if len(eyes) > 0:
+            # get the bounding box of the first detected eye
+            (ex, ey, ew, eh) = eyes[0]
+            
+            # crop the region containing the eye
+            eye_roi = img[y+ey:y+ey+eh, x+ex:x+ex+ew]
+            
+            # return the cropped eye image
+            return eye_roi
     
     
 
