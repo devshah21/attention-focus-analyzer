@@ -110,7 +110,6 @@ def gen():
                     system('say FOCUS UP, YOU ARE GETTING DISTRACTED')
                     
                 
-                cv2.imwrite(f'test_images/frame_{frame_count}.jpg', eye_roi)
             frame_count += 1
             
             ret, buffer = cv2.imencode('.jpg', frame)
