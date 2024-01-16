@@ -28,5 +28,5 @@ def classify_image(image_path, model):
 
 model = tf.keras.models.load_model('eye_Model.h5')
 
-print(classify_image('cropped_images/face_0_eye_0.png', model))
+print(classify_image('test_images/frame_0.jpg', model))
 

@@ -25,3 +25,5 @@ def text_to_speech(text, gender):
 
     engine.say(text)
     engine.runAndWait()
+    
+text_to_speech('PAY ATTENTION DUMBASS', 'Male')

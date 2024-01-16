@@ -1,7 +1,6 @@
 from flask import Flask, render_template, Response
 import cv2
 import tensorflow as tf
-from classifier import *
 import time
 from collections import deque
 import numpy as np
@@ -93,14 +92,21 @@ def gen():
             break
         else:
             frame = cv2.flip(frame, 1)
-            prediction = classify_frame(frame, model)
-            array.append(prediction)
-            print(array)
             
-            if not is_focused():
-                print("User is not focused!")
+            # Use the eye_classifier function to crop the eyes from the frame
+            eye_roi = eye_classifer(frame)
+            
+            # If eyes are detected in the frame
+            if eye_roi is not None:
+                # Classify the cropped eyes
+                prediction = classify_frame(eye_roi, model)
+                array.append(prediction)
+                print(array)
                 
-            cv2.imwrite(f'test_images/frame_{frame_count}.jpg', frame)
+                if not is_focused():
+                    print("User is not focused!")
+                
+                cv2.imwrite(f'test_images/frame_{frame_count}.jpg', eye_roi)
             frame_count += 1
             
             ret, buffer = cv2.imencode('.jpg', frame)
@@ -108,6 +114,7 @@ def gen():
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
             time.sleep(2)
+
 
 @app.route('/video_feed')
 def video_feed():
