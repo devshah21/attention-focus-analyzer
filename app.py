@@ -5,9 +5,11 @@ import time
 from collections import deque
 import numpy as np
 import os
+from os import system
 
 
-N = 60  # Number of seconds to consider
+
+N = 45  # Number of seconds to consider
 array = deque(maxlen=N)
 
 model = tf.keras.models.load_model('eye_Model.h5')
@@ -105,6 +107,8 @@ def gen():
                 
                 if not is_focused():
                     print("User is not focused!")
+                    system('say FOCUS UP, YOU ARE GETTING DISTRACTED')
+                    
                 
                 cv2.imwrite(f'test_images/frame_{frame_count}.jpg', eye_roi)
             frame_count += 1
