@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 import numpy as np
+from tensorflow.keras.models import load_model
 
 def classify_image(image_path, model):
     # Load the image
@@ -26,7 +27,7 @@ def classify_image(image_path, model):
     
     return prediction
 
-model = tf.keras.models.load_model('eye_Model.h5')
+model = load_model('eye_Model.h5')
 
-print(classify_image('test_images/frame_0.jpg', model))
+print(classify_image('/Users/devshah/Documents/WorkSpace/CS_Projects/Eye_Concentration/eye-concentration/other_files/_0.jpg', model))
 
