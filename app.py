@@ -1,25 +1,32 @@
 from flask import Flask, render_template, Response
 import cv2
-import tensorflow as tf
+import torch
+import torchvision.transforms as transforms
 import time
 from collections import deque
 import numpy as np
 import os
 from os import system
 
-
-
+from eye_detection import EyeDetectionCNN  
 N = 45  # Number of seconds to consider
 array = deque(maxlen=N)
 
-model = tf.keras.models.load_model('eye_Model.h5')
+# load model
+model = EyeDetectionCNN()
+model.load_state_dict(torch.load('model_files/eye_detection_cnn.pth'))
+model.eval()
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye_tree_eyeglasses.xml')
 
-
-
-
+# Define the transformation
+transform = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.Resize((64, 64)),
+    transforms.ToTensor(),
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+])
 
 def eye_classifer(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -42,8 +49,7 @@ def eye_classifer(img):
             # return the cropped eye image
             return eye_roi
     
-    
-
+    return None
 
 def is_focused():
     # Calculate the proportion of 'closed eyes' predictions in the last N seconds
@@ -55,21 +61,18 @@ def is_focused():
 
     return closed_eyes_proportion < threshold
 
-
 def classify_frame(frame, model):
-    # Convert the frame to a numpy array and normalize it
-    frame = cv2.resize(frame, (128, 128))
+    # Preprocess the frame
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    frame = np.expand_dims(frame, axis=0)
-    frame = frame / 255.
+    frame = transform(frame)
+    frame = frame.unsqueeze(0)  # Add batch dimension
 
     # Use the model to make a prediction
-    prediction = model.predict(frame)
+    with torch.no_grad():
+        output = model(frame)
+        _, predicted = torch.max(output, 1)
 
-    # Get the class with the highest probability
-    predicted_class = np.argmax(prediction)
-
-    if predicted_class == 0:
+    if predicted.item() == 0:
         prediction = 'closed eyes'
     else:
         prediction = 'open eyes'
@@ -109,7 +112,6 @@ def gen():
                     print("User is not focused!")
                     system('say FOCUS UP, YOU ARE GETTING DISTRACTED')
                     
-                
             frame_count += 1
             
             ret, buffer = cv2.imencode('.jpg', frame)
@@ -117,7 +119,6 @@ def gen():
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
             time.sleep(2)
-
 
 @app.route('/video_feed')
 def video_feed():
