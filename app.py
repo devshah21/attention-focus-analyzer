@@ -1,4 +1,4 @@
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, request, redirect, url_for
 import cv2
 import torch
 import torchvision.transforms as transforms
@@ -7,16 +7,21 @@ from collections import deque
 import numpy as np
 import os
 from os import system
+import logging
 
 from eye_detection import EyeDetectionCNN  
+
+app = Flask(__name__)
+app.logger.setLevel(logging.DEBUG)
+
+# Global variables
 N = 45  # Number of seconds to consider
 array = deque(maxlen=N)
+threshold = None
+camera = None
+model = None
 
 # load model
-model = EyeDetectionCNN()
-model.load_state_dict(torch.load('model_files/eye_detection_cnn.pth'))
-model.eval()
-
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye_tree_eyeglasses.xml')
 
@@ -55,10 +60,7 @@ def is_focused():
     # Calculate the proportion of 'closed eyes' predictions in the last N seconds
     closed_eyes_proportion = np.mean([pred == 'closed eyes' for pred in array])
 
-    # Define a threshold for when the user is considered not focused
-    # For example, if the eyes are closed more than 50% of the time
-    threshold = 0.5
-
+    # Use the user-defined threshold
     return closed_eyes_proportion < threshold
 
 def classify_frame(frame, model):
@@ -79,20 +81,44 @@ def classify_frame(frame, model):
 
     return prediction
 
-app = Flask(__name__)
-
-camera = cv2.VideoCapture(0)  # Use 0 for web camera
-
 @app.route('/')
 def index():
-    """Video streaming home page."""
-    return render_template('index.html')
+    """Threshold input page."""
+    app.logger.info("Accessing index page")
+    return render_template('threshold.html')
+
+@app.route('/set_threshold', methods=['POST'])
+def set_threshold():
+    global threshold
+    app.logger.info("Setting threshold")
+    threshold = float(request.form['threshold'])
+    app.logger.info(f"Threshold set to: {threshold}")
+    return redirect(url_for('video_page'))
+
+@app.route('/video')
+def video_page():
+    """Video streaming page."""
+    app.logger.info("Accessing video page")
+    if threshold is None:
+        app.logger.warning("Threshold not set, redirecting to index")
+        return redirect(url_for('index'))
+    return render_template('video.html')
 
 def gen():
     """Video streaming generator function."""
+    global camera, model
+    
+    # Initialize camera and model here
+    if camera is None:
+        camera = cv2.VideoCapture(0)
+    if model is None:
+        model = EyeDetectionCNN()
+        model.load_state_dict(torch.load('model_files/eye_detection_cnn.pth'))
+        model.eval()
+    
     frame_count = 0
     while True:
-        success, frame = camera.read()  # read the camera frame
+        success, frame = camera.read()
         if not success:
             break
         else:
@@ -127,4 +153,5 @@ def video_feed():
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
+    app.logger.info("Starting the application")
     app.run(host='0.0.0.0', port=8080, debug=True)
