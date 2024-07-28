@@ -102,7 +102,7 @@ def video_page():
     if threshold is None:
         app.logger.warning("Threshold not set, redirecting to index")
         return redirect(url_for('index'))
-    return render_template('video.html')
+    return render_template('index.html')
 
 def gen():
     """Video streaming generator function."""
