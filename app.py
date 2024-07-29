@@ -9,7 +9,7 @@ import os
 from os import system
 import logging
 
-from eye_detection import EyeDetectionCNN  
+from eye_detection import EyeDetectionCNN, EyeDetectionCNNV2
 
 app = Flask(__name__)
 app.logger.setLevel(logging.DEBUG)
@@ -20,6 +20,7 @@ array = deque(maxlen=N)
 threshold = None
 camera = None
 model = None
+model2 = None
 
 # load model
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -63,23 +64,30 @@ def is_focused():
     # Use the user-defined threshold
     return closed_eyes_proportion < threshold
 
-def classify_frame(frame, model):
+def classify_frame(frame, model, model2):
     # Preprocess the frame
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame = transform(frame)
     frame = frame.unsqueeze(0)  # Add batch dimension
 
-    # Use the model to make a prediction
+    # Use the first model to predict eye state (open/closed)
     with torch.no_grad():
-        output = model(frame)
-        _, predicted = torch.max(output, 1)
+        output1 = model(frame)
+        _, predicted1 = torch.max(output1, 1)
 
-    if predicted.item() == 0:
-        prediction = 'closed eyes'
+    if predicted1.item() == 0:
+        eye_state = 'closed eyes'
     else:
-        prediction = 'open eyes'
+        eye_state = 'open eyes'
 
-    return prediction
+    # Use the second model to predict eye direction (left/right)
+    with torch.no_grad():
+        output2 = model2(frame)
+        _, predicted2 = torch.max(output2, 1)
+
+    eye_direction = 'left' if predicted2.item() == 0 else 'right'
+
+    return eye_state, eye_direction
 
 @app.route('/')
 def index():
@@ -115,6 +123,11 @@ def gen():
         model = EyeDetectionCNN()
         model.load_state_dict(torch.load('model_files/eye_detection_cnn.pth'))
         model.eval()
+    
+    if model2 is None:
+        model2 = EyeDetectionCNNV2()
+        model2.load_state_dict(torch.load('model_files/eye_direction_cnn.pth'))
+        model2.eval()
     
     frame_count = 0
     while True:
